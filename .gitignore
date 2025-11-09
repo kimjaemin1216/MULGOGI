@@ -1,0 +1,29 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild*/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+Records/
+
+# Rider / Visual Studio / VS Code
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.unityproj
+*.pidb
+*.booproj
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Addressables / Cache
+[Aa]ddressable[Aa]ssets[Dd]ata/*/*/catalog*.json.meta
+[Aa]sset[Bb]undles/
