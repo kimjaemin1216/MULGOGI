@@ -61,12 +61,11 @@ public class PlayerHealth : MonoBehaviour
 
     private void SyncHeartBar(int current, int max)
     {
-        // HeartBar는 0~5개 토글 방식
         HeartBar.Instance?.SetMax(max);
         HeartBar.Instance?.SetHearts(current);
     }
 
-    /// <summary>외부에서 '한 대' 맞았다고 호출 (비닐 등 스택형 공격)</summary>
+    /// 외부에서 '한 대' 맞았다고 호출 (비닐 등 스택형 공격)
     public void AddHit(int hits = 1)
     {
         if (IsInvincible || IsDead) return;
@@ -77,18 +76,18 @@ public class PlayerHealth : MonoBehaviour
         {
             pendingHits -= hitsPerHeart;
             ApplyHeartDamage(1);
-            if (IsInvincible || IsDead) break; // 하트가 깎이면 무적/사망 처리 → 추가 중지
+            if (IsInvincible || IsDead) break;
         }
     }
 
-    /// <summary>직접 하트 데미지(투사체 등 즉시 1칸 감소)</summary>
+    /// 직접 하트 데미지(투사체 등 즉시 1칸 감소)
     public void Damage(int hearts = 1)
     {
         if (IsInvincible || IsDead) return;
         ApplyHeartDamage(Mathf.Max(1, hearts));
     }
 
-    /// <summary>하트 회복</summary>
+    /// 하트 회복
     public void Heal(int hearts = 1)
     {
         if (IsDead) return;
@@ -98,7 +97,7 @@ public class PlayerHealth : MonoBehaviour
         if (CurrentHearts != prev) OnHealthChanged?.Invoke(CurrentHearts, maxHearts);
     }
 
-    /// <summary>최대 하트 변경(업그레이드 등)</summary>
+    /// 최대 하트 변경(업그레이드 등)
     public void SetMaxHearts(int newMax, bool keepCurrentRatio = true)
     {
         if (IsDead) return;
@@ -136,7 +135,6 @@ public class PlayerHealth : MonoBehaviour
             return;
         }
 
-        // 무적 + 깜빡임 시작
         if (invCo != null) StopCoroutine(invCo);
         invCo = StartCoroutine(InvincibleRoutine());
     }
@@ -146,34 +144,24 @@ public class PlayerHealth : MonoBehaviour
         if (IsDead) return;
         IsDead = true;
 
-        // 충돌/조작 차단
         if (disableColliderOnDeath && col != null) col.enabled = false;
         if (disableMovementOnDeath)
         {
-            // 플레이어 이동/공격 스크립트가 다르면 아래 라인 추가/치환
-            var pc = GetComponent<MonoBehaviour>(); // 예: PlayerController, PlayerMove 등
-            // 필요 시 구체적 컴포넌트들을 꺼주세요:
-            // var move = GetComponent<PlayerController>(); if (move) move.enabled = false;
-            // var shoot = GetComponent<PlayerShooting>(); if (shoot) shoot.enabled = false;
+            // TODO: 실제 이동/공격 스크립트 비활성화 코드로 교체
+            var pc = GetComponent<MonoBehaviour>();
+            if (pc) pc.enabled = false;
         }
 
-        // 무적 코루틴 정리
         if (invCo != null) { StopCoroutine(invCo); invCo = null; }
         SetAlpha(1f);
         IsInvincible = false;
 
-        // 외부 리스너
         OnDied?.Invoke();
 
-        // 게임오버 UI 호출 (있으면)
         if (GameOverController.Instance != null)
-        {
             GameOverController.Instance.ShowGameOver();
-        }
         else
-        {
             Debug.LogWarning("[PlayerHealth] GameOverController.Instance가 없어 게임오버 패널을 띄우지 못했습니다.");
-        }
     }
 
     private IEnumerator InvincibleRoutine()
@@ -182,11 +170,6 @@ public class PlayerHealth : MonoBehaviour
 
         float t = 0f;
         bool visible = true;
-
-        // (선택) 무적 동안 Enemy와 충돌 무시
-        // int player = LayerMask.NameToLayer("Player");
-        // int enemy  = LayerMask.NameToLayer("Enemy");
-        // Physics2D.IgnoreLayerCollision(player, enemy, true);
 
         while (t < invincibleDuration)
         {
@@ -197,12 +180,8 @@ public class PlayerHealth : MonoBehaviour
         }
 
         SetAlpha(1f);
-        // Physics2D.IgnoreLayerCollision(player, enemy, false);
-
         IsInvincible = false;
         invCo = null;
-        // 원하면 무적 종료 시 스택 초기화:
-        // pendingHits = 0;
     }
 
     private void SetAlpha(float a)
@@ -213,5 +192,24 @@ public class PlayerHealth : MonoBehaviour
             if (r == null) continue;
             var c = r.color; c.a = a; r.color = c;
         }
+    }
+
+    // === 저장값 복원용 ===
+    public void SetCurrentHearts(int hearts, bool resetInvincibility = true)
+    {
+        IsDead = false;
+        if (disableColliderOnDeath && col != null) col.enabled = true;
+
+        CurrentHearts = Mathf.Clamp(hearts, 0, maxHearts);
+        pendingHits = 0;
+
+        if (resetInvincibility)
+        {
+            if (invCo != null) { StopCoroutine(invCo); invCo = null; }
+            SetAlpha(1f);
+            IsInvincible = false;
+        }
+
+        OnHealthChanged?.Invoke(CurrentHearts, maxHearts);
     }
 }
